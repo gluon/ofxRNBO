@@ -13,8 +13,10 @@
 
 int main()
 {
-	ofGLWindowSettings settings;
-	settings.setSize(720, 360);
+	// Fixed window, resize disabled. A stretchable window is not part of the charter.
+	ofGLFWWindowSettings settings;
+	settings.setSize(640, 400);
+	settings.resizable = false;
 	settings.windowMode = OF_WINDOW;
 
 	auto window = ofCreateWindow(settings);

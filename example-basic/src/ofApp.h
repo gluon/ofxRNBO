@@ -19,18 +19,31 @@ public:
 	void update() override;
 	void draw() override;
 	void keyPressed(int key) override;
+	void mouseMoved(int x, int y) override;
+	void mousePressed(int x, int y, int button) override;
 
 	void audioOut(ofSoundBuffer & buffer) override;
 
 private:
+	void drawParameter();
+	void drawFooter();
+	bool hit(const ofRectangle & r, int x, int y) const;
+
 	ofxRNBO rnbo;
 	ofSoundStream soundStream;
 
 	// The parameter this example drives. Change to match your export.
-	// The test patch exposes "freq". If your export names it differently, edit this.
+	// The provided patch exposes "freq". If your export names it differently, edit this.
 	std::string paramId = "freq";
 	int paramIndex = -1;
 	float paramMin = 0.0f;
 	float paramMax = 1.0f;
 	float paramValue = 0.0f;
+
+	// Footer link zones, resolved in setup, tested in mousePressed.
+	ofRectangle techLinkZone;
+	ofRectangle artLinkZone;
+	std::string techUrl = "https://structure-void.com";
+	std::string artUrl = "https://julienbayle.net";
+	int hoverLink = 0; // 0 none, 1 tech, 2 art
 };

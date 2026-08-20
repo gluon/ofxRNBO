@@ -10,11 +10,34 @@
 
 #include "ofApp.h"
 
+// Visual charter, shared across all ofxRNBO examples.
+// Dark anthracite ground, monospace type, one cool grey-green accent, thin lines.
+namespace {
+	const int   kWidth   = 640;
+	const int   kHeight  = 400;
+	const int   kMargin  = 48;
+	const float kCharW   = 8.0f;   // oF bitmap font advance
+	const float kLineH   = 14.0f;
+
+	const ofColor kBackground(26, 28, 30);   // deep neutral grey, not pure black
+	const ofColor kText(150, 156, 158);      // neutral grey
+	const ofColor kDim(96, 101, 104);        // dimmed grey
+	const ofColor kLine(58, 62, 65);         // thin rule
+	const ofColor kAccent(122, 168, 148);    // cool grey-green, active elements
+
+	ofRectangle textZone(const std::string & s, float x, float y) {
+		// Zone around a bitmap string drawn with its baseline at (x, y).
+		return ofRectangle(x - 2.0f, y - 11.0f, s.size() * kCharW + 4.0f, kLineH);
+	}
+}
+
 //--------------------------------------------------------------
 void ofApp::setup()
 {
-	ofBackground(20);
+	ofSetWindowTitle("ofxRNBO . basic tone");
+	ofSetWindowShape(kWidth, kHeight);
 	ofSetVerticalSync(true);
+	ofSetBackgroundAuto(true);
 
 	ofSoundStreamSettings settings;
 	settings.numOutputChannels = 2;
@@ -23,9 +46,8 @@ void ofApp::setup()
 	settings.bufferSize = 512;
 	settings.numBuffers = 4;
 
-	// Prepare RNBO from the same settings before starting the stream.
 	if (!rnbo.setup(settings)) {
-		ofLogError("ofApp") << "ofxRNBO setup failed. Did you drop a RNBO export into rnbo-export/ ?";
+		ofLogError("ofApp") << "ofxRNBO setup failed. Export a RNBO patch into rnbo-export/ first.";
 		return;
 	}
 
@@ -33,13 +55,7 @@ void ofApp::setup()
 						 << rnbo.getNumOutputChannels() << " out, "
 						 << rnbo.getNumInputChannels() << " in, "
 						 << rnbo.getNumParameters() << " params";
-	for (std::size_t i = 0; i < rnbo.getNumParameters(); ++i) {
-		ofLogNotice("ofApp") << "  param " << i
-							 << " id='" << rnbo.getParameterId(i)
-							 << "' name='" << rnbo.getParameterName(i) << "'";
-	}
 
-	// Resolve the parameter by id and read its real range for the slider mapping.
 	paramIndex = rnbo.getParameterIndexForId(paramId);
 	if (paramIndex >= 0) {
 		RNBO::ParameterInfo info;
@@ -52,6 +68,13 @@ void ofApp::setup()
 		ofLogWarning("ofApp") << "parameter id '" << paramId << "' not found in this export";
 	}
 
+	// Footer link zones, positioned once. Layout is fixed, the window does not resize.
+	const float linksY = kHeight - 30.0f;
+	const std::string techLabel = "tech structure-void.com";
+	const std::string artLabel = "art julienbayle.net";
+	techLinkZone = textZone(techLabel, kMargin, linksY);
+	artLinkZone = textZone(artLabel, kMargin + techLabel.size() * kCharW + 3 * kCharW, linksY);
+
 	settings.setOutListener(this);
 	soundStream.setup(settings);
 }
@@ -59,43 +82,111 @@ void ofApp::setup()
 //--------------------------------------------------------------
 void ofApp::update()
 {
-	// Drain RNBO events on the main thread.
-	rnbo.update();
+	rnbo.update(); // drain RNBO events on the main thread
 }
 
 //--------------------------------------------------------------
 void ofApp::draw()
 {
-	ofSetColor(230);
-	ofDrawBitmapString("ofxRNBO example-basic", 24, 40);
+	ofBackground(kBackground);
+	drawParameter();
+	drawFooter();
+}
+
+//--------------------------------------------------------------
+void ofApp::drawParameter()
+{
+	const float contentW = kWidth - 2.0f * kMargin;
 
 	if (!rnbo.isReady()) {
-		ofSetColor(255, 120, 120);
-		ofDrawBitmapString("No RNBO export loaded. Drop one into rnbo-export/ and rebuild.", 24, 80);
+		ofSetColor(kAccent);
+		ofDrawBitmapString("no export loaded", kMargin, 96);
+		ofSetColor(kDim);
+		ofDrawBitmapString("export a RNBO patch into rnbo-export/ and rebuild", kMargin, 118);
 		return;
 	}
 
-	ofDrawBitmapString("Audio out: " + ofToString(rnbo.getNumOutputChannels()) + " ch", 24, 80);
+	// Parameter id, left. Value, accent, right aligned.
+	ofSetColor(kText);
+	ofDrawBitmapString(paramId, kMargin, 96);
 
 	if (paramIndex >= 0) {
-		std::string line = "Parameter '" + paramId + "' = " + ofToString(paramValue, 3)
-						   + "   [" + ofToString(paramMin, 2) + " .. " + ofToString(paramMax, 2) + "]";
-		ofDrawBitmapString(line, 24, 120);
-		ofDrawBitmapString("Left / Right arrows to change, Up / Down for fine steps", 24, 150);
+		const std::string value = ofToString(paramValue, 2);
+		ofSetColor(kAccent);
+		ofDrawBitmapString(value, kWidth - kMargin - value.size() * kCharW, 96);
 
-		// Simple slider bar.
-		const float x = 24, y = 180, w = 480, h = 18;
-		const float t = (paramMax > paramMin) ? (paramValue - paramMin) / (paramMax - paramMin) : 0.0f;
+		// Slider, thin. Border grey, fill accent.
+		const float y = 124.0f;
+		const float h = 6.0f;
+		const float t = (paramMax > paramMin)
+			? ofClamp((paramValue - paramMin) / (paramMax - paramMin), 0.0f, 1.0f)
+			: 0.0f;
+
+		ofSetColor(kLine);
 		ofNoFill();
-		ofSetColor(120);
-		ofDrawRectangle(x, y, w, h);
+		ofDrawRectangle(kMargin, y, contentW, h);
 		ofFill();
-		ofSetColor(90, 200, 160);
-		ofDrawRectangle(x, y, w * ofClamp(t, 0.0f, 1.0f), h);
+		ofSetColor(kAccent);
+		ofDrawRectangle(kMargin, y, contentW * t, h);
+
+		// Range, dimmed.
+		ofSetColor(kDim);
+		ofDrawBitmapString(ofToString(paramMin, 0), kMargin, y + 26);
+		const std::string maxLabel = ofToString(paramMax, 0);
+		ofDrawBitmapString(maxLabel, kWidth - kMargin - maxLabel.size() * kCharW, y + 26);
+
+		// Controls hint.
+		ofSetColor(kDim);
+		ofDrawBitmapString("left / right  coarse      up / down  fine", kMargin, 196);
 	} else {
-		ofSetColor(255, 200, 120);
-		ofDrawBitmapString("Parameter '" + paramId + "' not present in this export.", 24, 120);
+		ofSetColor(kAccent);
+		ofDrawBitmapString("parameter '" + paramId + "' not in this export", kMargin, 124);
 	}
+}
+
+//--------------------------------------------------------------
+void ofApp::drawFooter()
+{
+	const float contentW = kWidth - 2.0f * kMargin;
+
+	// Separating rule.
+	ofSetColor(kLine);
+	ofDrawLine(kMargin, kHeight - 108, kMargin + contentW, kHeight - 108);
+
+	// Name, two words.
+	ofSetColor(kText);
+	ofDrawBitmapString("basic tone", kMargin, kHeight - 88);
+
+	// One line describing what it does.
+	ofSetColor(kDim);
+	ofDrawBitmapString("one scalar parameter, a sine that glides", kMargin, kHeight - 70);
+
+	// Author.
+	ofSetColor(kText);
+	ofDrawBitmapString("Julien Bayle / Structure Void", kMargin, kHeight - 46);
+
+	// Clickable links, accent. Brighter on hover, underlined.
+	const float linksY = kHeight - 30.0f;
+	const std::string techLabel = "tech structure-void.com";
+	const std::string artLabel = "art julienbayle.net";
+
+	ofSetColor(hoverLink == 1 ? ofColor(160, 206, 184) : kAccent);
+	ofDrawBitmapString(techLabel, techLinkZone.x + 2, linksY);
+	if (hoverLink == 1) {
+		ofDrawLine(techLinkZone.x + 2, linksY + 3, techLinkZone.x + 2 + techLabel.size() * kCharW, linksY + 3);
+	}
+
+	ofSetColor(hoverLink == 2 ? ofColor(160, 206, 184) : kAccent);
+	ofDrawBitmapString(artLabel, artLinkZone.x + 2, linksY);
+	if (hoverLink == 2) {
+		ofDrawLine(artLinkZone.x + 2, linksY + 3, artLinkZone.x + 2 + artLabel.size() * kCharW, linksY + 3);
+	}
+}
+
+//--------------------------------------------------------------
+bool ofApp::hit(const ofRectangle & r, int x, int y) const
+{
+	return r.inside(static_cast<float>(x), static_cast<float>(y));
 }
 
 //--------------------------------------------------------------
@@ -118,6 +209,24 @@ void ofApp::keyPressed(int key)
 
 	paramValue = ofClamp(paramValue, paramMin, paramMax);
 	rnbo.setParameter(static_cast<std::size_t>(paramIndex), paramValue);
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseMoved(int x, int y)
+{
+	hoverLink = 0;
+	if (hit(techLinkZone, x, y)) hoverLink = 1;
+	else if (hit(artLinkZone, x, y)) hoverLink = 2;
+}
+
+//--------------------------------------------------------------
+void ofApp::mousePressed(int x, int y, int button)
+{
+	if (hit(techLinkZone, x, y)) {
+		ofLaunchBrowser(techUrl);
+	} else if (hit(artLinkZone, x, y)) {
+		ofLaunchBrowser(artUrl);
+	}
 }
 
 //--------------------------------------------------------------

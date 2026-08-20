@@ -89,17 +89,17 @@ git clone https://github.com/gluon/ofxRNBO.git
 
 Generate a project with the Project Generator and add `ofxRNBO`, or start from `example-basic`.
 
-Then drop your own RNBO export in. The addon expects it, relative to the addon root:
+The addon is glue only: it carries no RNBO runtime. Each application, every example included, brings its own export and wires it in its own `config.make`. The export lands in that application's `rnbo-export/` folder:
 
 ```
-rnbo-export/rnbo_source.cpp
-rnbo-export/rnbo/RNBO.cpp
-rnbo-export/rnbo/RNBO.h
-rnbo-export/rnbo/common/
-rnbo-export/rnbo/src/
+<your app>/rnbo-export/rnbo_source.cpp
+<your app>/rnbo-export/rnbo/RNBO.cpp
+<your app>/rnbo-export/rnbo/RNBO.h
+<your app>/rnbo-export/rnbo/common/
+<your app>/rnbo-export/rnbo/src/
 ```
 
-The `rnbo-export/` directory is git-ignored and never shipped. The RNBO runtime and your export are Cycling '74 licensed; you bring your own.
+`example-basic/config.make` is the wiring to copy: the include paths into `rnbo-export/`, the `RNBO_NOJSONPRESETS` define, and the two shim sources that compile the export. Each `rnbo-export/` folder is git-ignored and never shipped. The RNBO runtime and your export are Cycling '74 licensed; you bring your own.
 
 ## Quick start
 
@@ -120,7 +120,7 @@ public:
         settings.numBuffers = 4;
 
         if (!rnbo.setup(settings)) {
-            ofLogError() << "No RNBO export found in rnbo-export/";
+            ofLogError() << "No RNBO export. Export your patch into rnbo-export/ and wire config.make.";
             return;
         }
 
@@ -167,8 +167,10 @@ ofxRNBO/
     ofxRNBO.cpp
   example-basic/         minimal oF app playing an export
     src/
-  addon_config.mk        include paths and defines for the export you drop in
-  rnbo-export/           your RNBO export goes here, git-ignored, never shipped
+    config.make          wires this example's export
+    rnbo-patch/          source .maxpat, versioned, shipped
+    rnbo-export/         generated export, git-ignored, per example
+  addon_config.mk        addon metadata only; glue, no export
   README.md
   LICENSE
   ACKNOWLEDGEMENTS.md
@@ -176,10 +178,10 @@ ofxRNBO/
 
 ## Author
 
-Julien Bayle
-tech: Structure Void <https://structure-void.com>
-art: <https://julienbayle.net>
-Ableton Certified Trainer · Max Certified Trainer.
+Julien Bayle  
+tech: Structure Void <https://structure-void.com>  
+art: <https://julienbayle.net>  
+Ableton Certified Trainer · Max Certified Trainer.  
 
 ## Acknowledgements
 

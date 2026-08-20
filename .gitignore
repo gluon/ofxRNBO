@@ -3,3 +3,8 @@ obj/
 *.o
 *.d
 .DS_Store
+
+# The RNBO export you generate is Cycling '74 licensed. Keep it out of git so it
+# is never committed by mistake. This mirrors the private repo's protection.
+example-*/rnbo-export/*
+!example-*/rnbo-export/.gitkeep
