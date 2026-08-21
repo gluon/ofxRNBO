@@ -51,6 +51,7 @@ bool ofxRNBO::setup(double sampleRate, std::size_t bufferSize, std::size_t /*num
 	outSlots_ = audioOut_ + signalOut_;
 
 	buildParameterMaps();
+	buildOutportNames();
 	allocateScratch(bufferSize);
 
 	// One fixed, generous max block size, set once. Never call prepareToProcess per block:
@@ -227,6 +228,124 @@ void ofxRNBO::eventsAvailable()
 	// Called on the audio thread. Draining here would block audio, so just flag it and let
 	// update() drain on the main thread.
 	pendingEvents.store(true);
+}
+
+// ------------------------------------------------------------------------ inports
+
+void ofxRNBO::sendMessage(const std::string & inport, double value)
+{
+	// TAG hashes the inport name to its MessageTag. TAG("") is the empty object id.
+	// Time is RNBOTimeNow, meaning as soon as possible.
+	rnbo.sendMessage(RNBO::TAG(inport.c_str()),
+					 static_cast<RNBO::number>(value),
+					 RNBO::TAG(""),
+					 RNBO::RNBOTimeNow);
+}
+
+void ofxRNBO::sendMessage(const std::string & inport, const std::vector<double> & values)
+{
+	// Build a RNBO list and hand ownership over with std::move. UniqueListPtr is a
+	// std::unique_ptr with STL enabled, so std::make_unique yields the right type.
+	RNBO::UniqueListPtr payload = std::make_unique<RNBO::list>();
+	for (double v : values) {
+		payload->push(static_cast<RNBO::number>(v));
+	}
+	rnbo.sendMessage(RNBO::TAG(inport.c_str()),
+					 std::move(payload),
+					 RNBO::TAG(""),
+					 RNBO::RNBOTimeNow);
+}
+
+void ofxRNBO::sendBang(const std::string & inport)
+{
+	rnbo.sendMessage(RNBO::TAG(inport.c_str()), RNBO::TAG(""), RNBO::RNBOTimeNow);
+}
+
+// ----------------------------------------------------------------------- outports
+
+void ofxRNBO::buildOutportNames()
+{
+	// getNumMessages counts named inports and outports together; keep only the outports.
+	outportNames.clear();
+	const RNBO::MessageIndex n = rnbo.getNumMessages();
+	for (RNBO::MessageIndex i = 0; i < n; ++i) {
+		const RNBO::MessageInfo & info = rnbo.getMessageInfo(i);
+		if (info.type == RNBO::MessagePortType::Outport && info.tag != nullptr) {
+			outportNames.push_back(std::string(info.tag));
+		}
+	}
+}
+
+void ofxRNBO::handleMessageEvent(const RNBO::MessageEvent & event)
+{
+	// Dispatched from drainEvents, which runs on the main thread via update(). Resolve the
+	// outport name and keep only the latest message under it. No lock, no unbounded queue.
+	const RNBO::MessageTagInfo tag = rnbo.resolveTag(event.getTag());
+	if (tag == nullptr || tag[0] == '\0') {
+		return;
+	}
+
+	OutportMessage & m = outportLatest[std::string(tag)];
+	m.type = event.getType();
+	m.count += 1;
+
+	switch (event.getType()) {
+		case RNBO::MessageEvent::Number:
+			m.number = static_cast<double>(event.getNumValue());
+			m.list.clear();
+			break;
+		case RNBO::MessageEvent::List: {
+			std::shared_ptr<const RNBO::list> lst = event.getListValue();
+			m.list.clear();
+			if (lst) {
+				for (std::size_t i = 0; i < lst->length; ++i) {
+					m.list.push_back(static_cast<double>((*lst)[i]));
+				}
+			}
+			m.number = m.list.empty() ? 0.0 : m.list.front();
+			break;
+		}
+		case RNBO::MessageEvent::Bang:
+			// A bang carries no value; leave the last number as is, just bump the count.
+			break;
+		default:
+			break;
+	}
+}
+
+std::string ofxRNBO::getOutportName(std::size_t index) const
+{
+	return index < outportNames.size() ? outportNames[index] : std::string();
+}
+
+bool ofxRNBO::hasOutport(const std::string & name) const
+{
+	return outportLatest.find(name) != outportLatest.end();
+}
+
+double ofxRNBO::getOutportValue(const std::string & name) const
+{
+	auto it = outportLatest.find(name);
+	return it == outportLatest.end() ? 0.0 : it->second.number;
+}
+
+std::vector<double> ofxRNBO::getOutportList(const std::string & name) const
+{
+	auto it = outportLatest.find(name);
+	if (it == outportLatest.end()) {
+		return {};
+	}
+	if (!it->second.list.empty()) {
+		return it->second.list;
+	}
+	// A scalar or bang reads back as a one-element list holding the latest number.
+	return { it->second.number };
+}
+
+unsigned long long ofxRNBO::getOutportCount(const std::string & name) const
+{
+	auto it = outportLatest.find(name);
+	return it == outportLatest.end() ? 0ull : it->second.count;
 }
 
 // ---------------------------------------------------------------------- parameters

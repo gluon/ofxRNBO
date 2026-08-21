@@ -21,8 +21,8 @@ namespace {
 
 	// Output scope band, between the controls and the footer. One sample per pixel column.
 	const int   kWaveLen = kWidth - 2 * kMargin;  // 544
-	const float kWaveTop = 214.0f;
-	const float kWaveH   = 64.0f;
+	const float kWaveTop = 232.0f;
+	const float kWaveH   = 60.0f;
 
 	const ofColor kBackground(26, 28, 30);   // deep neutral grey, not pure black
 	const ofColor kText(150, 156, 158);      // neutral grey
@@ -40,7 +40,7 @@ namespace {
 //--------------------------------------------------------------
 void ofApp::setup()
 {
-	ofSetWindowTitle("ofxRNBO . basic tone");
+	ofSetWindowTitle("ofxRNBO / basic");
 	ofSetWindowShape(kWidth, kHeight);
 	ofSetVerticalSync(true);
 	ofSetBackgroundAuto(true);
@@ -79,7 +79,7 @@ void ofApp::setup()
 	}
 
 	// Footer link zones, positioned once. Layout is fixed, the window does not resize.
-	const float linksY = kHeight - 30.0f;
+	const float linksY = kHeight - 24.0f;
 	const std::string techLabel = "tech structure-void.com";
 	const std::string artLabel = "art julienbayle.net";
 	techLinkZone = textZone(techLabel, kMargin, linksY);
@@ -99,9 +99,32 @@ void ofApp::update()
 void ofApp::draw()
 {
 	ofBackground(kBackground);
+	drawHeader();
 	drawParameter();
 	drawWaveform();
 	drawFooter();
+}
+
+//--------------------------------------------------------------
+void ofApp::drawHeader()
+{
+	// Top zone: a plugin-style title, larger than the rest, then a short description, then a
+	// thin separator. The title is the monospace bitmap font scaled up; MODEL bitmap mode makes
+	// the transform apply to it.
+	ofSetColor(kText);
+	ofSetDrawBitmapMode(OF_BITMAPMODE_MODEL);
+	ofPushMatrix();
+	ofTranslate(kMargin, 42.0f);
+	ofScale(2.0f, 2.0f);
+	ofDrawBitmapString("ofxRNBO / basic", 0, 0);
+	ofPopMatrix();
+	ofSetDrawBitmapMode(OF_BITMAPMODE_SIMPLE);
+
+	ofSetColor(kDim);
+	ofDrawBitmapString("one scalar parameter, a sine that glides", kMargin, 68);
+
+	ofSetColor(kLine);
+	ofDrawLine(kMargin, 84, kWidth - kMargin, 84);
 }
 
 //--------------------------------------------------------------
@@ -111,23 +134,23 @@ void ofApp::drawParameter()
 
 	if (!rnbo.isReady()) {
 		ofSetColor(kAccent);
-		ofDrawBitmapString("no export loaded", kMargin, 96);
+		ofDrawBitmapString("no export loaded", kMargin, 122);
 		ofSetColor(kDim);
-		ofDrawBitmapString("export a RNBO patch into rnbo-export/ and rebuild", kMargin, 118);
+		ofDrawBitmapString("export a RNBO patch into rnbo-export/ and rebuild", kMargin, 144);
 		return;
 	}
 
 	// Parameter id, left. Value, accent, right aligned.
 	ofSetColor(kText);
-	ofDrawBitmapString(paramId, kMargin, 96);
+	ofDrawBitmapString(paramId, kMargin, 120);
 
 	if (paramIndex >= 0) {
 		const std::string value = ofToString(paramValue, 2);
 		ofSetColor(kAccent);
-		ofDrawBitmapString(value, kWidth - kMargin - value.size() * kCharW, 96);
+		ofDrawBitmapString(value, kWidth - kMargin - value.size() * kCharW, 120);
 
 		// Slider, thin. Border grey, fill accent.
-		const float y = 124.0f;
+		const float y = 148.0f;
 		const float h = 6.0f;
 		const float t = (paramMax > paramMin)
 			? ofClamp((paramValue - paramMin) / (paramMax - paramMin), 0.0f, 1.0f)
@@ -148,10 +171,10 @@ void ofApp::drawParameter()
 
 		// Controls hint.
 		ofSetColor(kDim);
-		ofDrawBitmapString("left / right  coarse      up / down  fine", kMargin, 196);
+		ofDrawBitmapString("left / right  coarse      up / down  fine", kMargin, 208);
 	} else {
 		ofSetColor(kAccent);
-		ofDrawBitmapString("parameter '" + paramId + "' not in this export", kMargin, 124);
+		ofDrawBitmapString("parameter '" + paramId + "' not in this export", kMargin, 148);
 	}
 }
 
@@ -203,24 +226,15 @@ void ofApp::drawFooter()
 {
 	const float contentW = kWidth - 2.0f * kMargin;
 
-	// Separating rule.
+	// Bottom zone: a thin separator, then the credits and the clickable links.
 	ofSetColor(kLine);
-	ofDrawLine(kMargin, kHeight - 108, kMargin + contentW, kHeight - 108);
+	ofDrawLine(kMargin, kHeight - 64, kMargin + contentW, kHeight - 64);
 
-	// Name, two words.
 	ofSetColor(kText);
-	ofDrawBitmapString("basic tone", kMargin, kHeight - 88);
-
-	// One line describing what it does.
-	ofSetColor(kDim);
-	ofDrawBitmapString("one scalar parameter, a sine that glides", kMargin, kHeight - 70);
-
-	// Author.
-	ofSetColor(kText);
-	ofDrawBitmapString("Julien Bayle / Structure Void", kMargin, kHeight - 46);
+	ofDrawBitmapString("Julien Bayle / Structure Void", kMargin, kHeight - 44);
 
 	// Clickable links, accent. Brighter on hover, underlined.
-	const float linksY = kHeight - 30.0f;
+	const float linksY = kHeight - 24.0f;
 	const std::string techLabel = "tech structure-void.com";
 	const std::string artLabel = "art julienbayle.net";
 

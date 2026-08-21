@@ -25,6 +25,7 @@ public:
 	void audioOut(ofSoundBuffer & buffer) override;
 
 private:
+	void drawHeader();
 	void drawParameter();
 	void drawWaveform();
 	void drawFooter();

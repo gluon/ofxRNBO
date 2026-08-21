@@ -16,6 +16,7 @@
 
 #include <atomic>
 #include <cstddef>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -99,14 +100,54 @@ public:
 	bool sendMidi(const unsigned char * bytes, std::size_t length, int port = 0);
 	bool sendMidiNote(int channel, int pitch, int velocity, bool noteOn, int port = 0);
 
+	/* Inports, oF to RNBO */
+
+	// Send a message into a named patcher inport, or a numbered message input. A named inport
+	// "foo" is addressed by its name; a numbered `in` object uses the default tag "in1",
+	// "in2", and so on. Send from the main thread, in response to UI, the same multi-producer
+	// discipline as setParameter.
+
+	/// Send a single number to an inport.
+	void sendMessage(const std::string & inport, double value);
+	/// Send a list of numbers to an inport.
+	void sendMessage(const std::string & inport, const std::vector<double> & values);
+	/// Send a bang to an inport.
+	void sendBang(const std::string & inport);
+
+	/* Outports, RNBO to oF */
+
+	// Outports emit messages from the patch back to the host. The wrapper keeps only the
+	// latest message per outport name, updated when update() drains events on the main thread.
+	// Read these from the main thread, after calling update().
+
+	/// Number of outports declared by the export.
+	std::size_t getNumOutports() const { return outportNames.size(); }
+	/// Name of the outport at a given index, empty if out of range.
+	std::string getOutportName(std::size_t index) const;
+	/// Whether a message has ever been received on this outport name.
+	bool hasOutport(const std::string & name) const;
+
+	/// Latest scalar value received on an outport. For a list, this is its first element.
+	/// Returns 0 if nothing has arrived yet.
+	double getOutportValue(const std::string & name) const;
+	/// Latest list received on an outport. A scalar message reads back as a one-element list.
+	std::vector<double> getOutportList(const std::string & name) const;
+
+	/// How many messages have arrived on this outport since setup. Lets the app detect a new
+	/// message by watching the count change, rather than polling the value.
+	unsigned long long getOutportCount(const std::string & name) const;
+
 	/// Direct access, for anything this wrapper does not cover.
 	RNBO::CoreObject & getCoreObject() { return rnbo; }
 
 private:
 	// RNBO::EventHandler. Called on the audio thread, so it must not drain.
 	void eventsAvailable() override;
+	// RNBO::EventHandler. Dispatched from drainEvents on the main thread. Captures outports.
+	void handleMessageEvent(const RNBO::MessageEvent & event) override;
 
 	void buildParameterMaps();
+	void buildOutportNames();
 	void allocateScratch(std::size_t bufferSize);
 	void processChunk(std::size_t stagingOffset, std::size_t frames);
 
@@ -143,6 +184,17 @@ private:
 
 	std::unordered_map<std::string, std::size_t> idToIndex;
 	std::unordered_map<std::string, std::size_t> nameToIndex;
+
+	// Outport state. Only ever written in handleMessageEvent and read by the getters, both on
+	// the main thread, so no lock is needed. Keep-latest per name bounds the storage.
+	struct OutportMessage {
+		RNBO::MessageEvent::Type type = RNBO::MessageEvent::Invalid;
+		double number = 0.0;
+		std::vector<double> list;
+		unsigned long long count = 0;
+	};
+	std::vector<std::string> outportNames;
+	std::unordered_map<std::string, OutportMessage> outportLatest;
 
 	std::atomic<bool> pendingEvents{false};
 	bool warnedOversizeInput = false;

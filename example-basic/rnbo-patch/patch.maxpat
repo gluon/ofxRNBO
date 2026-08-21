@@ -9,8 +9,17 @@
             "modernui": 1
         },
         "classnamespace": "box",
-        "rect": [ 59.0, 125.0, 1000.0, 780.0 ],
+        "rect": [ 59.0, 125.0, 404.0, 273.0 ],
         "boxes": [
+            {
+                "box": {
+                    "id": "obj-4",
+                    "maxclass": "ezdac~",
+                    "numinlets": 2,
+                    "numoutlets": 0,
+                    "patching_rect": [ 23.0, 132.0, 70.0, 70.0 ]
+                }
+            },
             {
                 "box": {
                     "fontsize": 26.122938530734636,
@@ -18,7 +27,7 @@
                     "maxclass": "comment",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 159.0, 18.0, 177.0, 36.0 ],
+                    "patching_rect": [ 159.0, 57.0, 177.0, 36.0 ],
                     "text": "example-basic"
                 }
             },
@@ -61,7 +70,7 @@
                         "classnamespace": "rnbo",
                         "rect": [ 538.0, 213.0, 465.0, 458.0 ],
                         "default_fontname": "Lato",
-                        "title": "example-basic",
+                        "title": "untitled",
                         "boxes": [
                             {
                                 "box": {
@@ -259,8 +268,8 @@
                                     "patching_rect": [ 19.0, 102.0, 59.0, 23.0 ],
                                     "rnbo_classname": "cycle~",
                                     "rnbo_extra_attributes": {
-                                        "index": "freq",
                                         "buffername": "RNBODefaultSinus",
+                                        "index": "freq",
                                         "interp": "linear"
                                     },
                                     "rnbo_serial": 1,
@@ -311,12 +320,12 @@
                                     "patching_rect": [ 19.0, 22.0, 246.0, 23.0 ],
                                     "rnbo_classname": "param~",
                                     "rnbo_extra_attributes": {
+                                        "unit": "",
                                         "steps": 0.0,
-                                        "displayorder": "-",
-                                        "exponent": 1.0,
-                                        "meta": "",
                                         "displayname": "",
-                                        "unit": ""
+                                        "meta": "",
+                                        "exponent": 1.0,
+                                        "displayorder": "-"
                                     },
                                     "rnbo_serial": 1,
                                     "rnbo_uniqueid": "freq",
@@ -630,7 +639,7 @@
                             }
                         }
                     },
-                    "patching_rect": [ 23.0, 25.0, 120.0, 22.0 ],
+                    "patching_rect": [ 23.0, 64.0, 120.0, 22.0 ],
                     "rnboattrcache": {
                         "freq": {
                             "label": "freq",
@@ -673,7 +682,7 @@
                                     "version": 2,
                                     "minorversion": 0,
                                     "name": "example-basic",
-                                    "origin": "example-basic",
+                                    "origin": "0f855f7b-9cb1-11f1-9f7b-dae20d3053f6",
                                     "type": "rnbo",
                                     "subtype": "",
                                     "embed": 1,
@@ -685,7 +694,7 @@
                                         "filename": "example-basic.maxsnap",
                                         "filepath": "~/Documents/Max 9/Snapshots",
                                         "filepos": -1,
-                                        "snapshotfileid": "b09daddea2de5120b47c917334aa2325"
+                                        "snapshotfileid": "1967cd37fee244ad9777e990da737353"
                                     }
                                 }
                             ]
@@ -694,9 +703,40 @@
                     "text": "rnbo~ example-basic",
                     "varname": "rnbo~"
                 }
+            },
+            {
+                "box": {
+                    "attr": "freq",
+                    "id": "obj-2",
+                    "maxclass": "attrui",
+                    "numinlets": 1,
+                    "numoutlets": 1,
+                    "outlettype": [ "" ],
+                    "parameter_enable": 0,
+                    "patching_rect": [ 23.0, 22.0, 150.0, 22.0 ]
+                }
             }
         ],
-        "lines": [],
+        "lines": [
+            {
+                "patchline": {
+                    "destination": [ "obj-4", 1 ],
+                    "source": [ "obj-1", 1 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-4", 0 ],
+                    "source": [ "obj-1", 0 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-1", 0 ],
+                    "source": [ "obj-2", 0 ]
+                }
+            }
+        ],
         "parameters": {
             "obj-1": [ "rnbo~", "rnbo~", 0 ],
             "parameterbanks": {

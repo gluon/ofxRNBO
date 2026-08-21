@@ -1,10 +1,9 @@
-# example-basic
+# example-messages
 
-The reference example. One scalar parameter driven from openFrameworks into a RNBO
-patch: a sine whose pitch glides when you change it.
-
-This is the pattern every other ofxRNBO example copies: a source Max patch that ships,
-a generated export that you produce yourself, and a fixed, sober UI.
+Two-way messaging between openFrameworks and a RNBO patch. You type partial
+frequencies in oF, the patch receives them and drives four additive partials;
+you mix the four amplitudes live; and the patch sends a level envelope back,
+which oF reads and shows as a meter.
 
 | patch | openFrameworks |
 | --- | --- |
@@ -12,10 +11,13 @@ a generated export that you produce yourself, and a fixed, sober UI.
 
 ## What it demonstrates
 
-- A single scalar parameter (`freq`) set from oF with `setParameter`.
-- Audio playing through `ofSoundStream`, de/interleaved by the wrapper.
-- A gliding pitch: the patch smooths parameter changes, so the sine slides rather
-  than jumps.
+- Sending a list to a named inport: the typed frequencies go to inport
+  `partials` with `ofxRNBO::sendMessage`.
+- Setting scalar parameters live: four sliders drive params `partial1` to
+  `partial4`, the partial amplitudes.
+- Reading an outport: the patch emits a level on outport `envelope` (a snapshot~
+  every 10 ms), read with `ofxRNBO::getOutportValue("envelope")` and shown as a
+  meter. This is the RNBO to oF return path.
 
 ## Patch to export, the three-step drill
 
@@ -23,14 +25,18 @@ An example does not run out of the box. You produce the export yourself from the
 patch that ships with it.
 
 1. Open `rnbo-patch/` in Max and load the provided `.maxpat`.
-2. Export it with the RNBO C++ Source Code Export into `example-basic/rnbo-export/`.
+2. Export it with the RNBO C++ Source Code Export into `example-messages/rnbo-export/`.
    Use the standard export, not the Minimal Export. Keep RNBO's default export name
    so it produces `rnbo_source.cpp`; the build looks for it there.
-3. Build the example and listen. See Building below.
+3. Build the example. See Building below.
 
 The `rnbo-export/` folder is git-ignored: the RNBO runtime is Cycling '74 licensed
 and is never committed. The `rnbo-patch/` folder is versioned: the source patch is
 the author's own and ships with the example.
+
+The patch must expose: an inport `partials` taking a list of frequencies, four
+params `partial1` to `partial4` for the amplitudes, and an outport `envelope`
+emitting a level. Names matter; the oF code addresses them by these names.
 
 ## Building
 
@@ -64,14 +70,16 @@ make RunRelease
 
 ## What to see and hear
 
-A fixed window, dark and monospace. The parameter `freq`, its value, and a thin
-slider showing where it sits in range. Arrow keys move it: left and right coarse,
-up and down fine. You should hear a sine tone whose pitch glides to each new value.
+A fixed window, dark and monospace. A text field at the top: type frequencies
+separated by spaces, for example `50 100 200 220`, and press enter to send them
+to the patch. Four amplitude sliders below, dragged with the mouse, mix the four
+partials. At the bottom, a meter shows the envelope the patch sends back.
 
 If the window says "no export loaded", you have not exported the patch into
 `rnbo-export/` yet. Do the three steps above and rebuild.
 
 ## Note
 
-A green build proves nothing about the sound. The judge is what comes out of
-ofSoundStream, checked by ear with the real export.
+A green build proves nothing about the sound or the messaging. The judge is what
+comes out of ofSoundStream and what the meter shows, checked by ear and eye with
+the real export.
