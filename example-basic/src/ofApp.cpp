@@ -19,11 +19,17 @@ namespace {
 	const float kCharW   = 8.0f;   // oF bitmap font advance
 	const float kLineH   = 14.0f;
 
+	// Output scope band, between the controls and the footer. One sample per pixel column.
+	const int   kWaveLen = kWidth - 2 * kMargin;  // 544
+	const float kWaveTop = 214.0f;
+	const float kWaveH   = 64.0f;
+
 	const ofColor kBackground(26, 28, 30);   // deep neutral grey, not pure black
 	const ofColor kText(150, 156, 158);      // neutral grey
 	const ofColor kDim(96, 101, 104);        // dimmed grey
 	const ofColor kLine(58, 62, 65);         // thin rule
 	const ofColor kAccent(122, 168, 148);    // cool grey-green, active elements
+	const ofColor kWaveR(140, 145, 148);     // light discreet grey, right channel
 
 	ofRectangle textZone(const std::string & s, float x, float y) {
 		// Zone around a bitmap string drawn with its baseline at (x, y).
@@ -38,6 +44,10 @@ void ofApp::setup()
 	ofSetWindowShape(kWidth, kHeight);
 	ofSetVerticalSync(true);
 	ofSetBackgroundAuto(true);
+
+	// Pre-size the scope ring buffers so the audio callback never allocates.
+	waveL.assign(kWaveLen, 0.0f);
+	waveR.assign(kWaveLen, 0.0f);
 
 	ofSoundStreamSettings settings;
 	settings.numOutputChannels = 2;
@@ -90,6 +100,7 @@ void ofApp::draw()
 {
 	ofBackground(kBackground);
 	drawParameter();
+	drawWaveform();
 	drawFooter();
 }
 
@@ -141,6 +152,49 @@ void ofApp::drawParameter()
 	} else {
 		ofSetColor(kAccent);
 		ofDrawBitmapString("parameter '" + paramId + "' not in this export", kMargin, 124);
+	}
+}
+
+//--------------------------------------------------------------
+void ofApp::drawWaveform()
+{
+	if (!rnbo.isReady()) {
+		return;
+	}
+
+	const int n = static_cast<int>(waveL.size());
+	if (n < 2) {
+		return;
+	}
+
+	const float x0 = kMargin;
+	const float centerY = kWaveTop + kWaveH * 0.5f;
+	const float amp = kWaveH * 0.5f * 0.9f;
+
+	// Faint baseline, charter thin line.
+	ofSetColor(kLine);
+	ofDrawLine(x0, centerY, x0 + n, centerY);
+
+	ofSetLineWidth(1.0f);
+
+	// Both channels share the same rectangle, drawn on top of each other, so the small
+	// left/right offset shows. The patch delays the right channel, so R trails L.
+	// Right first, light discreet grey, so the accent left reads on top.
+	ofSetColor(kWaveR);
+	for (int i = 1; i < n; ++i) {
+		const std::size_t a = (wavePos + i - 1) % n;
+		const std::size_t b = (wavePos + i) % n;
+		ofDrawLine(x0 + (i - 1), centerY - waveR[a] * amp,
+				   x0 + i,       centerY - waveR[b] * amp);
+	}
+
+	// Left channel, accent.
+	ofSetColor(kAccent);
+	for (int i = 1; i < n; ++i) {
+		const std::size_t a = (wavePos + i - 1) % n;
+		const std::size_t b = (wavePos + i) % n;
+		ofDrawLine(x0 + (i - 1), centerY - waveL[a] * amp,
+				   x0 + i,       centerY - waveL[b] * amp);
 	}
 }
 
@@ -233,4 +287,20 @@ void ofApp::mousePressed(int x, int y, int button)
 void ofApp::audioOut(ofSoundBuffer & buffer)
 {
 	rnbo.audioOut(buffer);
+
+	// Feed the freshly produced output into the scope ring buffers. Audio thread, no lock,
+	// no allocation: the buffers are pre-sized in setup and only indexed here.
+	const std::size_t frames = buffer.getNumFrames();
+	const std::size_t chans = buffer.getNumChannels();
+	const std::size_t n = waveL.size();
+	if (n == 0 || chans == 0) {
+		return;
+	}
+	for (std::size_t f = 0; f < frames; ++f) {
+		const float l = buffer[f * chans + 0];
+		const float r = chans > 1 ? buffer[f * chans + 1] : l;
+		waveL[wavePos] = l;
+		waveR[wavePos] = r;
+		wavePos = (wavePos + 1) % n;
+	}
 }

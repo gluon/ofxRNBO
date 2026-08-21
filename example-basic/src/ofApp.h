@@ -26,11 +26,20 @@ public:
 
 private:
 	void drawParameter();
+	void drawWaveform();
 	void drawFooter();
 	bool hit(const ofRectangle & r, int x, int y) const;
 
 	ofxRNBO rnbo;
 	ofSoundStream soundStream;
+
+	// Output scope. Ring buffers of the last output samples per channel, written in
+	// audioOut on the audio thread, read in draw on the main thread. Pre-sized in setup
+	// so the audio callback never allocates. A lock is not used on purpose: at worst a
+	// frame shows a torn read, which a scope tolerates.
+	std::vector<float> waveL;
+	std::vector<float> waveR;
+	std::size_t wavePos = 0;
 
 	// The parameter this example drives. Change to match your export.
 	// The provided patch exposes "freq". If your export names it differently, edit this.

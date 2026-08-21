@@ -18,7 +18,7 @@
                     "maxclass": "comment",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 105.0, 18.0, 177.0, 36.0 ],
+                    "patching_rect": [ 159.0, 18.0, 177.0, 36.0 ],
                     "text": "example-basic"
                 }
             },
@@ -59,9 +59,9 @@
                             "modernui": 1
                         },
                         "classnamespace": "rnbo",
-                        "rect": [ 538.0, 213.0, 506.0, 717.0 ],
+                        "rect": [ 538.0, 213.0, 465.0, 458.0 ],
                         "default_fontname": "Lato",
-                        "title": "untitled",
+                        "title": "example-basic",
                         "boxes": [
                             {
                                 "box": {
@@ -75,7 +75,7 @@
                                         "comment": "",
                                         "meta": ""
                                     },
-                                    "rnbo_serial": 3,
+                                    "rnbo_serial": 1,
                                     "rnbo_uniqueid": "out~_obj-6",
                                     "rnboinfo": {
                                         "needsInstanceInfo": 1,
@@ -168,7 +168,7 @@
                                         "comment": "",
                                         "meta": ""
                                     },
-                                    "rnbo_serial": 1,
+                                    "rnbo_serial": 2,
                                     "rnbo_uniqueid": "out~_obj-5",
                                     "rnboinfo": {
                                         "needsInstanceInfo": 1,
@@ -259,8 +259,8 @@
                                     "patching_rect": [ 19.0, 102.0, 59.0, 23.0 ],
                                     "rnbo_classname": "cycle~",
                                     "rnbo_extra_attributes": {
-                                        "buffername": "RNBODefaultSinus",
                                         "index": "freq",
+                                        "buffername": "RNBODefaultSinus",
                                         "interp": "linear"
                                     },
                                     "rnbo_serial": 1,
@@ -279,8 +279,8 @@
                                     "rnbo_classname": "delay~",
                                     "rnbo_extra_attributes": {
                                         "ramp": 50.0,
-                                        "maxdelayms": 0.0,
-                                        "interp": "linear"
+                                        "interp": "linear",
+                                        "maxdelayms": 0.0
                                     },
                                     "rnbo_serial": 1,
                                     "rnbo_uniqueid": "delay~_obj-3",
@@ -311,12 +311,12 @@
                                     "patching_rect": [ 19.0, 22.0, 246.0, 23.0 ],
                                     "rnbo_classname": "param~",
                                     "rnbo_extra_attributes": {
-                                        "displayname": "",
                                         "steps": 0.0,
                                         "displayorder": "-",
-                                        "unit": "",
+                                        "exponent": 1.0,
                                         "meta": "",
-                                        "exponent": 1.0
+                                        "displayname": "",
+                                        "unit": ""
                                     },
                                     "rnbo_serial": 1,
                                     "rnbo_uniqueid": "freq",
@@ -630,7 +630,7 @@
                             }
                         }
                     },
-                    "patching_rect": [ 23.0, 25.0, 40.0, 22.0 ],
+                    "patching_rect": [ 23.0, 25.0, 120.0, 22.0 ],
                     "rnboattrcache": {
                         "freq": {
                             "label": "freq",
@@ -672,26 +672,26 @@
                                     "filetype": "C74Snapshot",
                                     "version": 2,
                                     "minorversion": 0,
-                                    "name": "untitled",
-                                    "origin": "0f855f7b-9cb1-11f1-9f7b-dae20d3053f6",
+                                    "name": "example-basic",
+                                    "origin": "example-basic",
                                     "type": "rnbo",
                                     "subtype": "",
-                                    "embed": 0,
+                                    "embed": 1,
                                     "snapshot": {
                                         "__presetid": "0f855f7b-9cb1-11f1-9f7b-dae20d3053f6"
                                     },
                                     "fileref": {
-                                        "name": "untitled",
-                                        "filename": "untitled_20260820.maxsnap",
+                                        "name": "example-basic",
+                                        "filename": "example-basic.maxsnap",
                                         "filepath": "~/Documents/Max 9/Snapshots",
                                         "filepos": -1,
-                                        "snapshotfileid": "e4860d3b8d9d1fe01b48426698364835"
+                                        "snapshotfileid": "b09daddea2de5120b47c917334aa2325"
                                     }
                                 }
                             ]
                         }
                     },
-                    "text": "rnbo~",
+                    "text": "rnbo~ example-basic",
                     "varname": "rnbo~"
                 }
             }
