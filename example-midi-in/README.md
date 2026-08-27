@@ -1,8 +1,8 @@
 # example-midi-in
 
-MIDI notes from openFrameworks into a RNBO synth. A transposable computer keyboard
-plays a polyphonic RNBO voice with an ADSR envelope, a bit-crusher and a lowpass
-filter: press keys to hold notes, release to let them go.
+MIDI notes from openFrameworks into a RNBO synth. You play a polyphonic RNBO synth
+by clicking an on-screen keyboard with the mouse. The patch has an ADSR envelope, a
+bit-crusher and a lowpass filter: click a key to sound a note, release to let it go.
 
 | patch | openFrameworks |
 | --- | --- |
@@ -12,31 +12,26 @@ filter: press keys to hold notes, release to let them go.
 
 - Sending MIDI note-on and note-off from oF into RNBO with
   `ofxRNBO::sendMidiNote`, the upstream MIDI path.
-- Polyphony from the keyboard: several keys held at once send several notes, and
-  each note-off matches the note its key started.
-- Absorbing the operating system key auto-repeat, so a held key sends one
-  note-on, not a stream.
+- Playing from an on-screen keyboard with the mouse: click a key for note-on,
+  release for note-off, drag across keys to slide from one note to the next.
+- The synth itself is polyphonic, the export provides several voices. The mouse
+  plays one note at a time, so you hear the synth note by note rather than as a
+  held chord.
 - The synth parameters, read from the export and driven live from sliders: the
   ADSR (`a d s r`), the crusher and the cutoff.
 
-This example uses the machine keyboard only, no external MIDI and no ofxMidi. An
-external MIDI input example comes separately.
+No external MIDI and no ofxMidi; you play with the mouse. An external MIDI input
+example comes separately.
 
 ## Keyboard
 
-Click the on-screen keyboard to play. This is the universal way and works on any
-keyboard layout: press a key with the mouse for note-on, release for note-off. The
-keys light up in the accent colour on the notes that are held. `w` and `x` shift
-the octave, shown next to the keyboard.
+Play with the mouse on the on-screen keyboard:
 
-As a bonus on a French AZERTY keyboard, the machine keys play too:
-
-- `q s d f g h j k` play the naturals, C D E F G A B and the next C.
-- `z e   t y u` play the sharps in between.
-- `w` and `x` shift the octave down and up.
-
-Chords need several keys at once, so use the machine keyboard for polyphony; the
-mouse plays one note at a time.
+- Click a key for note-on, release for note-off.
+- Drag with the button held to slide from one key to the next: the note you leave
+  stops and the note you enter starts, one note at a time.
+- The key lights up in the accent colour on the note being played.
+- `[oct-]` and `[oct+]` under the keyboard shift the octave, shown next to them.
 
 ## Patch to export, the three-step drill
 
@@ -89,10 +84,10 @@ make RunRelease
 
 ## What to see and hear
 
-A fixed window, dark and monospace. A two-octave keyboard that lights up the held
-notes, the current octave, and the key legend. Below, a slider for each synth
-parameter. At the bottom, a mono scope of the output. Play the keyboard and you
-should hear the RNBO synth, one voice per held key, with its ADSR shaping each note.
+A fixed window, dark and monospace. A two-octave keyboard that lights the note
+being played, the current octave with its two shift buttons, and below, a slider
+for each synth parameter. At the bottom, a mono scope of the output. Click and drag
+on the keyboard and you should hear the RNBO synth, with its ADSR shaping each note.
 
 If the window says "no export loaded", you have not exported the patch into
 `rnbo-export/` yet. Do the three steps above and rebuild.

@@ -1,5 +1,5 @@
 // ofxRNBO
-// Example app implementation: transposable computer keyboard into a RNBO synth.
+// Example app implementation: mouse-played on-screen keyboard into a RNBO synth.
 //
 // Julien Bayle / Structure Void
 // https://julienbayle.net
@@ -10,7 +10,6 @@
 
 #include "ofApp.h"
 
-#include <cctype>
 #include <set>
 
 // Visual charter, shared across all ofxRNBO examples.
@@ -94,6 +93,11 @@ void ofApp::setup()
 	techLinkZone = textZone(techLabel, kMargin, linksY);
 	artLinkZone = textZone("art julienbayle.net", kMargin + techLabel.size() * kCharW + 3 * kCharW, linksY);
 
+	// Clickable octave-shift buttons, on the line under the keyboard.
+	const float octaveY = kKbTop + kKbH + 26.0f;
+	octaveDownZone = textZone("[oct-]", kMargin + 12 * kCharW, octaveY);
+	octaveUpZone = textZone("[oct+]", kMargin + 19 * kCharW, octaveY);
+
 	settings.setOutListener(this);
 	soundStream.setup(settings);
 }
@@ -141,7 +145,7 @@ void ofApp::drawHeader()
 	ofSetDrawBitmapMode(OF_BITMAPMODE_SIMPLE);
 
 	ofSetColor(kDim);
-	ofDrawBitmapString("a computer keyboard plays a polyphonic RNBO synth", kMargin, 68);
+	ofDrawBitmapString("click the on-screen keyboard to play a polyphonic RNBO synth", kMargin, 68);
 
 	ofSetColor(kLine);
 	ofDrawLine(kMargin, 84, kWidth - kMargin, 84);
@@ -208,15 +212,8 @@ int ofApp::keyNoteAt(int x, int y) const
 //--------------------------------------------------------------
 void ofApp::drawKeyboard()
 {
-	// Which note offsets are currently held, from the machine keyboard and from the mouse, and
-	// fall on the drawn range. These light up.
+	// Which note offset is currently held by the mouse and falls on the drawn range. It lights up.
 	std::set<int> lit;
-	for (std::map<int, int>::const_iterator it = activeKeys.begin(); it != activeKeys.end(); ++it) {
-		const int off = it->second - baseNote;
-		if (off >= 0 && off < 12 * kKbOctaves) {
-			lit.insert(off);
-		}
-	}
 	if (mouseNote >= 0) {
 		const int off = mouseNote - baseNote;
 		if (off >= 0 && off < 12 * kKbOctaves) {
@@ -250,12 +247,14 @@ void ofApp::drawKeyboard()
 		ofFill();
 	}
 
-	// Current octave, on one uncrowded line under the keyboard.
+	// Current octave, with two clickable shift buttons on the same line.
 	const int octave = baseNote / 12 - 1;
+	const float octaveY = kKbTop + kKbH + 26.0f;
 	ofSetColor(kText);
-	ofDrawBitmapString("octave " + ofToString(octave), kMargin, kKbTop + kKbH + 26.0f);
-	ofSetColor(kDim);
-	ofDrawBitmapString("w / x shift octave", kMargin + 14 * kCharW, kKbTop + kKbH + 26.0f);
+	ofDrawBitmapString("octave " + ofToString(octave), kMargin, octaveY);
+	ofSetColor(kAccent);
+	ofDrawBitmapString("[oct-]", kMargin + 12 * kCharW, octaveY);
+	ofDrawBitmapString("[oct+]", kMargin + 19 * kCharW, octaveY);
 }
 
 //--------------------------------------------------------------
@@ -355,40 +354,7 @@ void ofApp::drawFooter()
 	}
 }
 
-//--------------------------------------------------------------
-int ofApp::semitoneForKey(int key) const
-{
-	// AZERTY (French) piano layout. openFrameworks reports the character the layout produces,
-	// and on a French AZERTY keyboard the home row keys produce q s d f g h j k (the naturals)
-	// while the row above produces z e t y u (the sharps). Octave shift is on w and x, the two
-	// bottom-left keys, since z is now a note.
-	switch (std::tolower(key)) {
-		case 'q': return 0;   // C
-		case 'z': return 1;   // C sharp
-		case 's': return 2;   // D
-		case 'e': return 3;   // D sharp
-		case 'd': return 4;   // E
-		case 'f': return 5;   // F
-		case 't': return 6;   // F sharp
-		case 'g': return 7;   // G
-		case 'y': return 8;   // G sharp
-		case 'h': return 9;   // A
-		case 'u': return 10;  // A sharp
-		case 'j': return 11;  // B
-		case 'k': return 12;  // C, one octave up
-		default:  return -1;
-	}
-}
 
-//--------------------------------------------------------------
-std::string ofApp::noteName(int note) const
-{
-	static const char * names[12] = {
-		"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
-	};
-	const int octave = note / 12 - 1;   // MIDI note 60 is C4
-	return std::string(names[note % 12]) + ofToString(octave);
-}
 
 //--------------------------------------------------------------
 void ofApp::setParamFromMouse(int index, int x)
@@ -403,34 +369,6 @@ void ofApp::setParamFromMouse(int index, int x)
 	rnbo.setParameter(p.index, p.value);
 }
 
-//--------------------------------------------------------------
-void ofApp::keyPressed(int key)
-{
-	const int k = std::tolower(key);
-
-	// Octave shift on w and x. On QWERTY Ableton uses z and x, but here z is the C sharp key,
-	// so the octave-down key moves to w, its bottom-left neighbour. Does not affect held notes.
-	if (k == 'w') {
-		baseNote = std::max(0, baseNote - 12);
-		return;
-	}
-	if (k == 'x') {
-		baseNote = std::min(108, baseNote + 12);
-		return;
-	}
-
-	const int st = semitoneForKey(k);
-	if (st < 0) {
-		return;
-	}
-	// Absorb the operating system key auto-repeat: if the key is already held, do nothing.
-	if (activeKeys.find(k) != activeKeys.end()) {
-		return;
-	}
-	const int note = static_cast<int>(ofClamp(baseNote + st, 0, 127));
-	activeKeys[k] = note;
-	sendNoteOn(note);
-}
 
 //--------------------------------------------------------------
 void ofApp::sendNoteOn(int note)
@@ -445,18 +383,6 @@ void ofApp::sendNoteOff(int note)
 	rnbo.sendMidiNote(channel, note, 0, false);
 }
 
-//--------------------------------------------------------------
-void ofApp::keyReleased(int key)
-{
-	const int k = std::tolower(key);
-	std::map<int, int>::iterator it = activeKeys.find(k);
-	if (it != activeKeys.end()) {
-		// The note-off is sent on the exact note this key started, so an octave shift while the
-		// key was held cannot leave a note stuck on.
-		sendNoteOff(it->second);
-		activeKeys.erase(it);
-	}
-}
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y)
@@ -477,7 +403,16 @@ void ofApp::mousePressed(int x, int y, int button)
 		ofLaunchBrowser(artUrl);
 		return;
 	}
-	// On-screen keyboard, the universal way to play. One note per press, held until release.
+	// Octave shift buttons. They move the whole keyboard, not any note currently held.
+	if (hit(octaveDownZone, x, y)) {
+		baseNote = std::max(0, baseNote - 12);
+		return;
+	}
+	if (hit(octaveUpZone, x, y)) {
+		baseNote = std::min(108, baseNote + 12);
+		return;
+	}
+	// On-screen keyboard, played with the mouse. One note per press, held until release.
 	const int kbNote = keyNoteAt(x, y);
 	if (kbNote >= 0) {
 		mouseNote = kbNote;

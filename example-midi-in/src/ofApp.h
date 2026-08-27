@@ -1,7 +1,7 @@
 #pragma once
 
 // ofxRNBO
-// Example app: a transposable computer keyboard plays a polyphonic RNBO synth.
+// Example app: play a polyphonic RNBO synth from the on-screen keyboard, with the mouse.
 //
 // Julien Bayle / Structure Void
 // https://julienbayle.net
@@ -13,15 +13,11 @@
 #include "ofMain.h"
 #include "ofxRNBO.h"
 
-#include <map>
-
 class ofApp : public ofBaseApp {
 public:
 	void setup() override;
 	void update() override;
 	void draw() override;
-	void keyPressed(int key) override;
-	void keyReleased(int key) override;
 	void mouseMoved(int x, int y) override;
 	void mousePressed(int x, int y, int button) override;
 	void mouseDragged(int x, int y, int button) override;
@@ -30,8 +26,6 @@ public:
 	void audioOut(ofSoundBuffer & buffer) override;
 
 private:
-	int semitoneForKey(int key) const;   // key char to semitone offset, -1 if not a note key
-	std::string noteName(int note) const;
 	void setParamFromMouse(int index, int x);
 
 	void sendNoteOn(int note);
@@ -53,15 +47,10 @@ private:
 	int baseNote = 60;   // MIDI note for the leftmost key, middle C by default
 	int velocity = 100;
 	int channel = 0;
-	// Keys currently held, mapped to the MIDI note each one triggered. Keying on the character
-	// gives one note per physical key, lets a note-off use the exact note the note-on sent even
-	// after an octave shift, and absorbs the operating system key auto-repeat: a held key is
-	// already in the map, so no repeated note-on.
-	std::map<int, int> activeKeys;
 
-	// On-screen keyboard, clickable and universal, independent of the machine layout. Each key
-	// carries its offset from baseNote so a click sends baseNote + offset. Black keys are tested
-	// before white keys because they sit on top.
+	// On-screen keyboard, played with the mouse. Each key carries its offset from baseNote so a
+	// click sends baseNote + offset. Black keys are tested before white keys because they sit on
+	// top.
 	struct Key {
 		ofRectangle rect;
 		int offset = 0;   // semitones above baseNote
@@ -69,6 +58,10 @@ private:
 	};
 	std::vector<Key> keys;
 	int mouseNote = -1;   // MIDI note currently held by the mouse, -1 if none
+
+	// Clickable octave-shift buttons, resolved in setup.
+	ofRectangle octaveDownZone;
+	ofRectangle octaveUpZone;
 
 	// Synth parameters exposed by the export, shown as sliders. Whatever the patch exposes,
 	// so this adapts to the actual synth without assuming names.
